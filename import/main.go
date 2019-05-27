@@ -104,7 +104,7 @@ func addFileList(dir string, list *[]string) error {
 /// mediaScanner - the part that scans media and creates a copy work list
 
 type mediaScanner struct {
-	worker  Worker
+	Worker
 	destDir string
 	list    []copyItem
 	dirs    sync.Map
@@ -132,7 +132,7 @@ func (m *mediaScanner) scan(fileList []string, destDir string, nConc int) ([]cop
 		list[k] = v
 	}
 
-	m.worker.Work(list, scanConc,
+	m.Work(list, scanConc,
 		func(fileList []interface{}, start int, len int) {
 
 			var localCopyList []copyItem
@@ -169,7 +169,7 @@ func (m *mediaScanner) scan(fileList []string, destDir string, nConc int) ([]cop
 			}
 
 			// Finalize by saving results
-			m.worker.Finalize(func() {
+			m.Finalize(func() {
 				m.list = append(m.list, localCopyList...)
 			})
 		})
@@ -180,7 +180,7 @@ func (m *mediaScanner) scan(fileList []string, destDir string, nConc int) ([]cop
 /// fileCopier - the part that copies files
 
 type fileCopier struct {
-	worker Worker
+	Worker
 
 	bytesCopied uint64
 	filesCopied uint32
@@ -197,7 +197,7 @@ func (f *fileCopier) copy(list []copyItem, nConc int) error {
 		workList[k] = v
 	}
 
-	f.worker.Work(workList, copyConc,
+	f.Work(workList, copyConc,
 		func(list []interface{}, start int, len int) {
 			for i := start; i < start+len; i++ {
 				item := list[i].(copyItem)
@@ -229,7 +229,7 @@ func (f *fileCopier) copy(list []copyItem, nConc int) error {
 				atomic.AddUint32(&f.filesCopied, 1)
 			}
 
-			f.worker.Finalize(func() {})
+			f.Finalize(func() {})
 		})
 
 	return nil
@@ -240,7 +240,7 @@ func (f *fileCopier) printStats() {
 		fmt.Printf("\n%d files failed to copy due to errors\n", f.filesFailed)
 	}
 
-	dur := f.worker.Duration()
+	dur := f.Duration()
 	MB := f.bytesCopied / 1024 / 1024
 	MBps := float64(MB) / dur.Seconds()
 
