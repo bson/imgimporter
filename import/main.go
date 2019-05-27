@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"math"
 	"os"
 	"path"
 	"strings"
@@ -111,10 +110,6 @@ type mediaScanner struct {
 	dirs    sync.Map
 }
 
-func (m *mediaScanner) init() {
-	m.worker.Init()
-}
-
 // Add path to dir if it doesn't exist
 func (m *mediaScanner) checkDir(path string) {
 	if _, found := m.dirs.Load(path); !found {
@@ -192,10 +187,6 @@ type fileCopier struct {
 	filesFailed uint32
 }
 
-func (f *fileCopier) init() {
-	f.worker.Init()
-}
-
 func (f *fileCopier) copy(list []copyItem, nConc int) error {
 	f.bytesCopied = 0
 	f.filesCopied = 0
@@ -254,13 +245,11 @@ func (f *fileCopier) printStats() {
 	MBps := float64(MB) / dur.Seconds()
 
 	fmt.Printf("\nCopied %d files/%vMB in %.1fs (%.1fMB/s)\n",
-		f.filesCopied, MB, math.Mod(dur.Seconds(), 60), MBps)
+		f.filesCopied, MB, dur.Seconds(), MBps)
 }
 
 func main() {
 	var scanner mediaScanner
-
-	scanner.init()
 
 	source := fmt.Sprintf("%s/%s", defaultVol, imgDir)
 	homeDir, _ := os.UserHomeDir()
@@ -297,7 +286,6 @@ func main() {
 	})
 
 	var copier fileCopier
-	copier.init()
 
 	if err := copier.copy(list, copyConc); err != nil {
 		fmt.Printf("File copy failed: %s\n", err.Error())

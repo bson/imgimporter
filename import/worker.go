@@ -16,10 +16,6 @@ type Worker struct {
 	ended    time.Time
 }
 
-func (w *Worker) Init() {
-	w.Changed = sync.NewCond(&w.Lock)
-}
-
 // Wait for workers to finish
 func (w *Worker) wait(n int) {
 	w.Lock.Lock()
@@ -31,6 +27,10 @@ func (w *Worker) wait(n int) {
 
 // Launch workers
 func (w *Worker) Work(list []interface{}, nConc int, workFunc WorkFunc) error {
+	if w.Changed == nil {
+		w.Changed = sync.NewCond(&w.Lock)
+	}
+
 	w.started = time.Now()
 
 	chunkStart := 0
