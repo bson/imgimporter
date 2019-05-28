@@ -105,9 +105,11 @@ func addFileList(dir string, list *[]string) error {
 
 type mediaScanner struct {
 	Worker
-	destDir string
-	list    []copyItem
-	dirs    sync.Map
+	destDir      string
+	list         []copyItem
+	dirs         sync.Map
+	filesScanned uint32
+	newFiles     uint32
 }
 
 // Add path to dir if it doesn't exist
@@ -125,6 +127,8 @@ func (m *mediaScanner) scan(fileList []string, destDir string, nConc int) ([]cop
 	m.destDir = destDir
 	m.dirs = sync.Map{}
 	m.list = []copyItem{}
+	m.filesScanned = 0
+	m.newFiles = 0
 
 	// Convert []string to []interface{}
 	list := make([]interface{}, len(fileList))
@@ -133,6 +137,7 @@ func (m *mediaScanner) scan(fileList []string, destDir string, nConc int) ([]cop
 	}
 
 	m.Work(list, scanConc,
+		fmt.Sprintf("Scanning %d media files on card", len(fileList)),
 		func(fileList []interface{}, start int, len int) {
 
 			var localCopyList []copyItem
@@ -140,6 +145,9 @@ func (m *mediaScanner) scan(fileList []string, destDir string, nConc int) ([]cop
 			for i := start; i < start+len; i++ {
 				file := fileList[i].(string)
 				created, err := GetCreateDate(file)
+
+				atomic.AddUint32(&m.filesScanned, 1)
+
 				if err != nil {
 					// No valid EXIF, so not a tagged file format
 					continue
@@ -165,13 +173,26 @@ func (m *mediaScanner) scan(fileList []string, destDir string, nConc int) ([]cop
 
 					// See if we need to create the parent directories also
 					m.checkDir(dir)
+					atomic.AddUint32(&m.newFiles, 1)
 				}
+
+				// Update progress, if needed
+				m.Progress()
 			}
 
 			// Finalize by saving results
 			m.Finalize(func() {
 				m.list = append(m.list, localCopyList...)
 			})
+		},
+		func() string {
+			if m.newFiles != 0 {
+				return fmt.Sprintf("%d/%d - %d new - in %.1fs", m.filesScanned, len(fileList),
+					m.newFiles, m.Runtime().Seconds())
+			} else {
+				return fmt.Sprintf("%d/%d in %.1fs", m.filesScanned, len(fileList),
+					m.Runtime().Seconds())
+			}
 		})
 
 	return m.list, m.dirs
@@ -198,10 +219,10 @@ func (f *fileCopier) copy(list []copyItem, nConc int) error {
 	}
 
 	f.Work(workList, copyConc,
+		fmt.Sprintf("Copying %d new media files", len(list)),
 		func(list []interface{}, start int, len int) {
 			for i := start; i < start+len; i++ {
 				item := list[i].(copyItem)
-				fmt.Println(item.from, item.to)
 				fFrom, err := os.Open(item.from)
 				if err != nil {
 					fmt.Printf("Unable to import %s: %s\n", item.from, err.Error())
@@ -227,25 +248,23 @@ func (f *fileCopier) copy(list []copyItem, nConc int) error {
 
 				atomic.AddUint64(&f.bytesCopied, uint64(nBytes))
 				atomic.AddUint32(&f.filesCopied, 1)
+
+				f.Progress()
 			}
 
 			f.Finalize(func() {})
+		},
+		// Progress
+		func() string {
+			dur := f.Runtime()
+			MB := f.bytesCopied / 1024 / 1024
+			MBps := float64(MB) / dur.Seconds()
+
+			return fmt.Sprintf("%d/%d - %vMB in %.1fs (%.1fMB/s)",
+				f.filesCopied, len(workList), MB, dur.Seconds(), MBps)
 		})
 
 	return nil
-}
-
-func (f *fileCopier) printStats() {
-	if f.filesFailed != 0 {
-		fmt.Printf("\n%d files failed to copy due to errors\n", f.filesFailed)
-	}
-
-	dur := f.Duration()
-	MB := f.bytesCopied / 1024 / 1024
-	MBps := float64(MB) / dur.Seconds()
-
-	fmt.Printf("\nCopied %d files/%vMB in %.1fs (%.1fMB/s)\n",
-		f.filesCopied, MB, dur.Seconds(), MBps)
 }
 
 func main() {
@@ -270,11 +289,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Printf("Checking %d files on card\n", len(fileList))
-
 	list, dirs := scanner.scan(fileList, dest, scanConc)
-
-	fmt.Printf("Copying %d new media files\n", len(list))
 
 	// Create directories
 	dirs.Range(func(dir interface{}, _ interface{}) bool {
@@ -291,6 +306,4 @@ func main() {
 		fmt.Printf("File copy failed: %s\n", err.Error())
 		os.Exit(1)
 	}
-
-	copier.printStats()
 }
