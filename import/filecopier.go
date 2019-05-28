@@ -10,7 +10,7 @@ import (
 /// fileCopier - the part that copies files
 
 type fileCopier struct {
-	ConcWork
+	WorkSet
 
 	bytesCopied uint64
 	filesCopied uint32

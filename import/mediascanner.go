@@ -16,7 +16,7 @@ import (
 /// mediaScanner - the part that scans media and creates a copy work list
 
 type mediaScanner struct {
-	ConcWork
+	WorkSet
 	destDir      string
 	list         []copyItem
 	dirs         sync.Map
