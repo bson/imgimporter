@@ -7,7 +7,6 @@ import (
 	"sync/atomic"
 )
 
-
 /// fileCopier - the part that copies files
 
 type fileCopier struct {
@@ -76,4 +75,3 @@ func (f *fileCopier) copy(list []copyItem, nConc int) error {
 
 	return nil
 }
-
