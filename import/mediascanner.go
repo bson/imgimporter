@@ -49,7 +49,7 @@ func (m *mediaScanner) scan(fileList []string, destDir string, nConc int) ([]cop
 	}
 
 	m.Work(list, scanConc,
-		fmt.Sprintf("Scanning %d media files on card", len(fileList)),
+		fmt.Sprintf("Scanning %d media files", len(fileList)),
 		func(fileList []interface{}, start int, len int) {
 
 			var localCopyList []copyItem

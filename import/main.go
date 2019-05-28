@@ -66,8 +66,6 @@ func main() {
 	homeDir, _ := os.UserHomeDir()
 	dest := fmt.Sprintf("%s/Pictures", homeDir)
 
-	fmt.Printf("Importing from %s to %s\n", source, dest)
-
 	if len(os.Args) >= 2 {
 		source = os.Args[1]
 	}
@@ -75,13 +73,25 @@ func main() {
 		dest = os.Args[2]
 	}
 
+	fmt.Printf("Importing from %s to %s\n", source, dest)
+
 	var fileList []string
 	if err := addFileList(source, &fileList); err != nil {
 		fmt.Printf("Failed to scan source file tree: %s\n", err.Error())
 		os.Exit(1)
 	}
 
+	if len(fileList) == 0 {
+		fmt.Println("No files found.  Nothing to be done here")
+		os.Exit(0)
+	}
+
 	list, dirs := scanner.scan(fileList, dest, scanConc)
+
+	if len(list) == 0 {
+		fmt.Println("Nothing new.  Nothing to be done here")
+		os.Exit(0)
+	}
 
 	// Create directories
 	dirs.Range(func(dir interface{}, _ interface{}) bool {
