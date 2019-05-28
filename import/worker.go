@@ -18,7 +18,6 @@ type Worker struct {
 
 	finished int
 	started  time.Time
-	ended    time.Time
 
 	progFunc ProgressFunc
 	progress time.Time
@@ -77,8 +76,6 @@ func (w *Worker) Work(list []interface{}, nConc int, what string, workFunc WorkF
 
 	w.wait(nConc)
 
-	w.ended = time.Now()
-
 	w.updateStatus(w.progFunc())
 	fmt.Print("\n")
 
@@ -109,12 +106,7 @@ func (w *Worker) Finalize(finalizer func()) {
 	w.Lock.Unlock()
 }
 
-// Return duration of work
-func (w *Worker) Duration() time.Duration {
-	return w.ended.Sub(w.started)
-}
-
-// Return duration DURING work
+// Return duration of ongoing work
 func (w *Worker) Runtime() time.Duration {
 	return time.Now().Sub(w.started)
 }
