@@ -12,7 +12,7 @@ const progressInterval = 300 // ms
 type WorkFunc func(list []interface{}, start int, len int)
 type ProgressFunc func() string
 
-type Worker struct {
+type ConcWork struct {
 	Lock    sync.Mutex
 	Changed *sync.Cond
 
@@ -25,7 +25,7 @@ type Worker struct {
 }
 
 // Wait for workers to finish
-func (w *Worker) wait(n int) {
+func (w *ConcWork) wait(n int) {
 	w.Lock.Lock()
 	for w.finished < n {
 		w.Changed.Wait()
@@ -34,7 +34,7 @@ func (w *Worker) wait(n int) {
 }
 
 // Update status string
-func (w *Worker) updateStatus(newStatus string) {
+func (w *ConcWork) updateStatus(newStatus string) {
 	fmt.Print(strings.Repeat("\b", len(w.pStr)))
 	fmt.Print(newStatus)
 	if len(w.pStr) > len(newStatus) {
@@ -45,7 +45,7 @@ func (w *Worker) updateStatus(newStatus string) {
 }
 
 // Launch workers
-func (w *Worker) Work(list []interface{}, nConc int, what string, workFunc WorkFunc,
+func (w *ConcWork) Work(list []interface{}, nConc int, what string, workFunc WorkFunc,
 	progress ProgressFunc) error {
 
 	w.progFunc = progress
@@ -83,10 +83,10 @@ func (w *Worker) Work(list []interface{}, nConc int, what string, workFunc WorkF
 }
 
 // Update progress, if due
-func (w *Worker) Progress() {
+func (w *ConcWork) Progress() {
 	w.Lock.Lock()
 	defer w.Lock.Unlock()
-	
+
 	if time.Now().After(w.progress) {
 		w.progress = time.Now().Add(time.Duration(progressInterval * time.Millisecond))
 		w.updateStatus(w.progFunc())
@@ -94,7 +94,7 @@ func (w *Worker) Progress() {
 }
 
 // Finalize work
-func (w *Worker) Finalize(finalizer func()) {
+func (w *ConcWork) Finalize(finalizer func()) {
 	w.Lock.Lock()
 
 	finalizer()
@@ -105,6 +105,6 @@ func (w *Worker) Finalize(finalizer func()) {
 }
 
 // Return duration of ongoing work
-func (w *Worker) Runtime() time.Duration {
+func (w *ConcWork) Runtime() time.Duration {
 	return time.Now().Sub(w.started)
 }
