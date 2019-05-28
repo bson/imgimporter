@@ -85,13 +85,11 @@ func (w *Worker) Work(list []interface{}, nConc int, what string, workFunc WorkF
 // Update progress, if due
 func (w *Worker) Progress() {
 	w.Lock.Lock()
+	defer w.Lock.Unlock()
+	
 	if time.Now().After(w.progress) {
 		w.progress = time.Now().Add(time.Duration(progressInterval * time.Millisecond))
-		w.Lock.Unlock()
-
 		w.updateStatus(w.progFunc())
-	} else {
-		w.Lock.Unlock()
 	}
 }
 
