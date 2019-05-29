@@ -57,11 +57,11 @@ func (m *mediaScanner) scan(fileList []string, destDir string, nConc int) ([]cop
 			var localCopyList []copyItem
 
 			for i := start; i < start+len; i++ {
-				file := fileList[i].(string)
-				created, err := GetCreateDate(file)
-
 				atomic.AddUint32(&m.filesScanned, 1)
 
+				file := fileList[i].(string)
+
+				created, err := GetCreateDate(file)
 				if err != nil {
 					// No valid EXIF, so not a tagged file format
 					continue

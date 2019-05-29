@@ -36,7 +36,7 @@ func (f *fileCopier) copy(list []copyItem, nConc int) error {
 				item := list[i].(copyItem)
 				fFrom, err := os.Open(item.from)
 				if err != nil {
-					fmt.Printf("Unable to import %s: %s\n", item.from, err.Error())
+					f.Errorf("Unable to import %s: %s\n", item.from, err.Error())
 					atomic.AddUint32(&f.filesFailed, 1)
 					continue
 				}
@@ -44,7 +44,7 @@ func (f *fileCopier) copy(list []copyItem, nConc int) error {
 
 				fTo, err := os.Create(item.to)
 				if err != nil {
-					fmt.Printf("Unable to import to %s: %s\n", item.to, err.Error())
+					f.Errorf("Unable to import to %s: %s\n", item.to, err.Error())
 					atomic.AddUint32(&f.filesFailed, 1)
 					continue
 				}
@@ -52,7 +52,7 @@ func (f *fileCopier) copy(list []copyItem, nConc int) error {
 
 				nBytes, err := io.Copy(fTo, fFrom)
 				if err != nil {
-					fmt.Printf("Failed to import %s: %s\n", item.from, err.Error())
+					f.Errorf("Failed to import %s: %s\n", item.from, err.Error())
 					atomic.AddUint32(&f.filesFailed, 1)
 					continue
 				}

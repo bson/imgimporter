@@ -19,6 +19,8 @@ type WorkSet struct {
 	finished int
 	started  time.Time
 
+	what     string
+
 	progFunc ProgressFunc
 	progress time.Time
 	pStr     string
@@ -61,6 +63,7 @@ func (w *WorkSet) Work(list []interface{}, nConc int, what string, workFunc Work
 
 	w.finished = 0
 
+	w.what = what
 	fmt.Printf("%s - ", what)
 	w.pStr = ""
 	w.updateStatus(w.progFunc())
@@ -91,6 +94,16 @@ func (w *WorkSet) Progress() {
 		w.progress = time.Now().Add(time.Duration(progressInterval * time.Millisecond))
 		w.updateStatus(w.progFunc())
 	}
+}
+
+// Print error message
+func (w *WorkSet) Errorf(format string, args ...interface{}) {
+	fmt.Print(strings.Repeat("\b", len(w.what) + len(w.pStr) + 3))
+	errLen, _ := fmt.Printf(format, args...)
+	if remainder := len(w.what) + len(w.pStr) + 3 - errLen; remainder > 0 {
+		fmt.Print(strings.Repeat(" ", remainder))
+	}
+	fmt.Printf("\n%s - %s", w.what, w.pStr)
 }
 
 // Finalize work
