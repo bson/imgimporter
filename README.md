@@ -1,4 +1,7 @@
 # imgimporter
+
+## About
+
 This is a very simple utility to import raw Nikon NEF images to a Lightroom-like directory tree.  I created
 it to simplify image import when Adobe stopped supporting Lightroom 6, to use with DxO PhotoLab 2.
 
@@ -19,3 +22,12 @@ It's probably possible to use the creation time of files instead of the EXIF ori
 since for large cards with a huge number of files yet a small incremental set to copy almost the entire time is spent
 scanning media files for EXIF info.  It would also permit copying over certain other sidecar files some cameras produce
 that don't have EXIF.
+
+## Installation
+
+Make sure you have GOPATH set up.  If you're new to go, check out any of the many intros out there, for
+example https://golangbot.com/learn-golang-series/.  Then:
+```
+$ go install github.com/bson/imgimporter
+```
+This will download, build and install the code in this repo as $GOPATH/bin/imgimporter.
