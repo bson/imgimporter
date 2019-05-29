@@ -5,12 +5,14 @@ import (
 	"io"
 	"os"
 	"sync/atomic"
+
+	"github.com/bson/imgimporter/workset"
 )
 
 /// fileCopier - the part that copies files
 
 type fileCopier struct {
-	WorkSet
+	workset.WorkSet
 
 	bytesCopied uint64
 	filesCopied uint32

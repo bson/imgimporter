@@ -10,13 +10,15 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/bson/imgimporter/workset"
+
 	"github.com/rwcarlsen/goexif/exif"
 )
 
 /// mediaScanner - the part that scans media and creates a copy work list
 
 type mediaScanner struct {
-	WorkSet
+	workset.WorkSet
 	destDir      string
 	list         []copyItem
 	dirs         sync.Map
