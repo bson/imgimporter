@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 )
 
 const (
-	defaultVol = "/Volumes/NIKON Z 7  "
+	//defaultVol = "/Volumes/NIKON Z 7  "
+	defaultVol = "D:"
 	imgDir     = "DCIM"
 	rawSubDir  = "RAWS"
 	jpegSubDir = "JPEGS"
@@ -48,11 +50,11 @@ func addFileList(dir string, list *[]string) error {
 		info := d[i]
 
 		if info.Mode().IsDir() {
-			if err := addFileList(fmt.Sprintf("%s/%s", dir, info.Name()), list); err != nil {
+			if err := addFileList(filepath.FromSlash(fmt.Sprintf("%s/%s", dir, info.Name())), list); err != nil {
 				return err
 			}
 		} else if (info.Mode() & os.ModeType) == 0 {
-			*list = append(*list, fmt.Sprintf("%s/%s", dir, info.Name()))
+			*list = append(*list, filepath.FromSlash(fmt.Sprintf("%s/%s", dir, info.Name())))
 		}
 	}
 
@@ -64,7 +66,8 @@ func main() {
 
 	source := fmt.Sprintf("%s/%s", defaultVol, imgDir)
 	homeDir, _ := os.UserHomeDir()
-	dest := fmt.Sprintf("%s/Pictures", homeDir)
+	dest := filepath.FromSlash(fmt.Sprintf("%s/Pictures/Imported", homeDir))
+	source = filepath.FromSlash(source)
 
 	if len(os.Args) >= 2 {
 		source = os.Args[1]

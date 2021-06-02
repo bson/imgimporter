@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -35,6 +36,14 @@ func (m *mediaScanner) checkDir(path string) {
 	}
 }
 
+
+// because path.Base() doesn't work correctly on Windows
+func basename(file string) string {
+     s := strings.Split(file, string(filepath.Separator))
+     return s[len(s)-1]
+}
+
+
 // Scan media and collect files to copy
 func (m *mediaScanner) scan(fileList []string, destDir string, nConc int) ([]copyItem, sync.Map) {
 
@@ -59,7 +68,7 @@ func (m *mediaScanner) scan(fileList []string, destDir string, nConc int) ([]cop
 			for i := start; i < start+len; i++ {
 				atomic.AddUint32(&m.filesScanned, 1)
 
-				file := fileList[i].(string)
+				file := filepath.FromSlash(fileList[i].(string))
 
 				created, err := GetCreateDate(file)
 				if err != nil {
@@ -75,7 +84,8 @@ func (m *mediaScanner) scan(fileList []string, destDir string, nConc int) ([]cop
 					dir += "/" + subDir
 				}
 
-				to := fmt.Sprintf("%s/%s", dir, path.Base(file))
+				to := filepath.FromSlash(fmt.Sprintf("%s/%s", dir, basename(file)))
+				dir = filepath.FromSlash(dir)
 
 				if !FileExists(to) {
 					toCopy := copyItem{
