@@ -79,7 +79,7 @@ func (m *mediaScanner) scan(fileList []string, destDir string, nConc int) ([]cop
 					continue
 				}
 				if _, _, copied := m.alreadyCopied(file, fileCreated); copied {
-					m.Progress();
+					m.Progress()
 					continue
 				}
 
@@ -138,7 +138,7 @@ func (m* mediaScanner) alreadyCopied(file string, created time.Time) (string, st
 	to := filepath.FromSlash(fmt.Sprintf("%s/%s", dir, basename(file)))
 	dir = filepath.FromSlash(dir)
 
-	return dir, to, FileExists(to);
+	return dir, to, FileExists(to)
 }
 
 // Get fle creation time of a media file
