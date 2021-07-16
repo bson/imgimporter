@@ -5,11 +5,12 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 )
 
 const (
-	//defaultVol = "/Volumes/NIKON Z 7  "
-	defaultVol = "D:"
+	defaultVolumeOSX = "/Volumes/NIKON Z 7  "
+	defaultVolumeWindows = "D:"
 	imgDir     = "DCIM"
 	rawSubDir  = "RAWS"
 	jpegSubDir = "JPEGS"
@@ -64,7 +65,14 @@ func addFileList(dir string, list *[]string) error {
 func main() {
 	var scanner mediaScanner
 
-	source := fmt.Sprintf("%s/%s", defaultVol, imgDir)
+	var defVol string
+	if runtime.GOOS == "windows" {
+		defVol = defaultVolumeWindows
+	} else {
+		defVol = defaultVolumeOSX
+	}
+
+	source := fmt.Sprintf("%s/%s", defVol, imgDir)
 	homeDir, _ := os.UserHomeDir()
 	dest := filepath.FromSlash(fmt.Sprintf("%s/Pictures/Imported", homeDir))
 	source = filepath.FromSlash(source)
