@@ -70,24 +70,22 @@ func (m *mediaScanner) scan(fileList []string, destDir string, nConc int) ([]cop
 
 				file := filepath.FromSlash(fileList[i].(string))
 
-				created, err := GetCreateDate(file)
+				// First check using file modification date.  If it already exists, we consider it copied.
+				// This is just a quick check to skip previously copied files.  If the file modification date
+				// differs from the Exif creation date, then we consider the latter authoritative, so
+				// in this peculiar case we experience a slower media scan rate for these particular files.
+				fileCreated, err := GetFileModDate(file)
+				if _, _, copied := m.alreadyCopied(file, fileCreated); copied {
+					continue
+				}
+
+				created, err := GetExifCreateDate(file)
 				if err != nil {
 					// No valid EXIF, so not a tagged file format
 					continue
 				}
 
-				dir := fmt.Sprintf("%s/%04d/%04d-%02d-%02d", m.destDir, created.Year(),
-					created.Year(), created.Month(), created.Day())
-
-				ext := strings.ToLower(path.Ext(file))
-				if subDir, found := subDirByType[ext]; found {
-					dir += "/" + subDir
-				}
-
-				to := filepath.FromSlash(fmt.Sprintf("%s/%s", dir, basename(file)))
-				dir = filepath.FromSlash(dir)
-
-				if !FileExists(to) {
+				if dir, to, copied := m.alreadyCopied(file, created); !copied {
 					toCopy := copyItem{
 						from: file,
 						to:   to,
@@ -122,8 +120,34 @@ func (m *mediaScanner) scan(fileList []string, destDir string, nConc int) ([]cop
 	return m.list, m.dirs
 }
 
+// Check if file exists given a specific creation date
+// Returns destination directory path, destination file name, and whether it exists already
+func (m* mediaScanner) alreadyCopied(file string, created time.Time) (string, string, bool) {
+	dir := fmt.Sprintf("%s/%04d/%04d-%02d-%02d", m.destDir, created.Year(),
+		created.Year(), created.Month(), created.Day())
+
+	ext := strings.ToLower(path.Ext(file))
+	if subDir, found := subDirByType[ext]; found {
+		dir += "/" + subDir
+	}
+
+	to := filepath.FromSlash(fmt.Sprintf("%s/%s", dir, basename(file)))
+	dir = filepath.FromSlash(dir)
+
+	return dir, to, FileExists(to);
+}
+
+// Get fle creation time of a media file
+func GetFileModDate(fname string) (time.Time, error) {
+	info, err := os.Stat(fname)
+	if err != nil {
+		return time.Now(), errors.New(fmt.Sprintf("Unable to stat file: %s", err.Error()))
+	}
+	return info.ModTime(), nil
+}
+
 // Get creation time of a media file from its EXIF info
-func GetCreateDate(fname string) (time.Time, error) {
+func GetExifCreateDate(fname string) (time.Time, error) {
 	f, err := os.Open(fname)
 	defer f.Close()
 
