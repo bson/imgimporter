@@ -76,6 +76,7 @@ func (m *mediaScanner) scan(fileList []string, destDir string, nConc int) ([]cop
 				// in this peculiar case we experience a slower media scan rate for these particular files.
 				fileCreated, err := GetFileModDate(file)
 				if _, _, copied := m.alreadyCopied(file, fileCreated); copied {
+					m.Progress();
 					continue
 				}
 
