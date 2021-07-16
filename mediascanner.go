@@ -75,6 +75,9 @@ func (m *mediaScanner) scan(fileList []string, destDir string, nConc int) ([]cop
 				// differs from the Exif creation date, then we consider the latter authoritative, so
 				// in this peculiar case we experience a slower media scan rate for these particular files.
 				fileCreated, err := GetFileModDate(file)
+				if err != nil {
+					continue
+				}
 				if _, _, copied := m.alreadyCopied(file, fileCreated); copied {
 					m.Progress();
 					continue
